@@ -279,14 +279,19 @@ char의 ascii값인 정수형을, decimal to hex변환하고,
 
 됐당.... 이래도 되나 근데? 
 
-\xC8\xCE\xC5\x06\xC8\xCE\xC5\x06\xC8\xCE\xC5\x06\xC8\xCE\xC5\x06\xCC\xCE\xC5\x06
+    .col "\xC8\xCE\xC5\x06\xC8\xCE\xC5\x06\xC8\xCE\xC5\x06\xC8\xCE\xC5\x06\xCC\xCE\xC5\x06"
 
 안되네 젠장 
 
-<br>
-<br>
 
-그럼 가보자고
+    ./col `python -c 'print "\xC8\xCE\xC5\x06"*4+"\xCC\xCE\xC5\x06"'`
+
+
+파이썬 구문을 이용해서 인자를 넣으니 성공!! 앞에거가 왜 안됐는지는 아직도 모름... 
+
+
+
+
 
 <br>
 <br>
@@ -298,26 +303,18 @@ char의 ascii값인 정수형을, decimal to hex변환하고,
 
 
 
+![success](/img/01_success!!.jpg)
 
-
-<br>
-<br>
-
-
-
-
-
-<br>
-<br>
-
-
-
+    daddy! I just managed to create a hash collision :)
 
 
 
 <br>
 <br>
 <br>
+
+
+:)
 
 
 
