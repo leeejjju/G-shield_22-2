@@ -48,7 +48,7 @@ pwnable은
 
 3. 같은 입력값에서는 반드시 같은 출력값이 나오고, 서로 다른 입력값이 같은 출력값을 내놓을 확률은 극히 낮다고 한다. 
 
-4. 그래서 패스워드에 암호화에 자주 사용되었음
+4. 그래서 패스워드 암호화에 자주 사용되었음
 
 <br>
 <br>
@@ -122,7 +122,7 @@ main함수를 보면, 우선 인자의 조건을 제한하는 부분이 있다.
         }
 
 
-원하는 flag를 출력하기 위해서는 unsigned long type인 `hash` 변수가, 우리가 첫번째 인자로 줄 argv[1]을 파라미터로 받은 `check_password()`함수의 리턴값과 같아야 한다. 
+원하는 flag를 출력하기 위해서는 unsigned long type인 `hash` 변수가, 우리가 첫번째 인자로 줄 `argv[1]`을 파라미터로 받은 `check_password()`함수의 리턴값과 같아야 한다. 
 
 그럼 이 함수가 뭐하는 놈인지 위로 올라가보자. 
 
@@ -141,7 +141,9 @@ main함수를 보면, 우선 인자의 조건을 제한하는 부분이 있다.
         return res;
 }
 
-return type은 `hash`와 같은 unsigned long. 파라미터로 문자열을 받는다. 
+return type은 `hash`와 같은 unsigned long. 
+
+파라미터로 문자열을 받는다. 
 
 그리고 내부에서 지역 변수로 정의된 `ip`라는 int 포인터 타입(아마 array가 아닐까)의 변수는 파라미터로 받은 친구의 int* 형변환 버전으로 초기화된다. 
 
@@ -161,7 +163,7 @@ return type은 `hash`와 같은 unsigned long. 파라미터로 문자열을 받�
 
 즉, 함수의 리턴값이 일치하게 하려면은 `res`가 `568134124`가 되어야 하는거고. `res`는 `ip`의 맨 앞 다섯개 원소의 합... 
 
-그러니께 더해서 `568134124`가 되는 다섯개의 정수, 그놈이 이 hashcode의 collision이라 추측해볼 수 있겠다. 
+그러니께 더해서 `568134124`가 되는 다섯개의 정수, 그놈들이 이 hashcode의 collision이라 추측해볼 수 있겠다. 
 
 그럼 그걸 어케 만드느냐?? 
 
@@ -175,9 +177,12 @@ return type은 `hash`와 같은 unsigned long. 파라미터로 문자열을 받�
 그 어케어케를 거꾸로 가서 원하는 값이 나오도록 하는 input값을 찾아보자. 
 
 
+<br>
 
-1. char배열인 input(p)을 int배열로 형변환시킨다. 
+1. char배열인 input, p를 int배열로 형변환시킨다. 
 2. 앞에서부터 다섯개 원소를 res에 누적합산한다. 
+
+<br>
 
 근데 보자보자. char는 하나에 1byte다. int는 4byte다. 그니까 네개의 문자가 하나의 int로 변환되는 것 아닐까? 
 
@@ -194,7 +199,7 @@ return type은 `hash`와 같은 unsigned long. 파라미터로 문자열을 받�
     113626824
     >>> 568134124%5
     4
-파이썬이 계산해줌 히히. 
+
 
 보면 개당 113626824의 값을 갖고, 한놈은 4를 더 가지면 될 듯. 
 
@@ -233,8 +238,12 @@ char의 ascii값인 정수형을, decimal to hex변환하고,
 
 예를 들자면, 
 
+<br>
+
 - aaaa를 ascii 즉 decimal로 바꾸면 61616161
 - 61616161을 hex로 취급한 채 decimal로 다시 변환하면 1633771873가 나온다!! 
+
+<br>
 
 역시 내부적으로 16진수를 쓴다는 점이 열쇠였던 듯. 일단 16진수 변환해서 차곡차곡 밀어넣은 다음 네개를 하나로 취급해서 다시 변환하는 방식이다. 
 
@@ -287,7 +296,9 @@ char의 ascii값인 정수형을, decimal to hex변환하고,
     ./col `python -c 'print "\xC8\xCE\xC5\x06"*4+"\xCC\xCE\xC5\x06"'`
 
 
-파이썬 구문을 이용해서 인자를 넣으니 성공!! 앞에거가 왜 안됐는지는 아직도 모름... 
+파이썬 구문을 이용해서 인자를 넣으니 성공!! 
+
+앞에거가 왜 안됐는지는 아직도 모름... 
 
 
 
@@ -304,6 +315,8 @@ char의 ascii값인 정수형을, decimal to hex변환하고,
 
 
 ![success](/img/01_success!!.jpg)
+
+<br>
 
     daddy! I just managed to create a hash collision :)
 
