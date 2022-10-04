@@ -296,27 +296,21 @@ char의 ascii값인 정수형을, decimal to hex변환하고,
 <br>
 <br>
 
-    ./fd 4660
-
-이렇게 인자로 4660을 주면서 프로그램을 실행시키면 read함수가 실행되어 입력 대기 상태가 된다. 이 때,
-
-    LETMEWIN
 
 
 
-를 입력해주면 된다. 뒤에 `\n`는 짜피 엔터로 입력을 종료시킬 때 들어갈거다. 
 
 <br>
 <br>
 
-그러믄 짜잔티비. flag를 알아냈다! 
 
-![flag](/img/00_flag.jpg)
+
+
 
 <br>
 <br>
 
-    mommy! I think I know what a file descriptor is!!
+
 
 
 
@@ -325,7 +319,6 @@ char의 ascii값인 정수형을, decimal to hex변환하고,
 <br>
 <br>
 
-good job :)
 
 
 
