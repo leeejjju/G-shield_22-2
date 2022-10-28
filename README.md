@@ -1,4 +1,4 @@
-# G-hield_22-2
+# G-shield_22-2
 
 > G-shield with GHOST
 >
