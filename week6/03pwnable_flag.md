@@ -1,4 +1,4 @@
-# HW03) pwnable bof
+# HW03) pwnable flag
 
 
 ## week6 
